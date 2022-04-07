@@ -14,7 +14,9 @@ Rendered H1, H2, and H6 headings
 ![Headings](./image/headings-rendered.png)
 
 When you use two or more headings, GitHub automatically generates a table of contents which you can access by clicking  within the file header. Each heading title is listed in the table of contents and you can click a title to navigate to the selected section.
+
 ![headings](./image/headings_toc.png)
+
 Screenshot highlighting the table of contents icon
 
 # Styling text
@@ -35,7 +37,9 @@ Text that is not a quote
 
 > Text that is a quote
 ```
+
 ![Quoting text](./image/quoted-text-rendered.png)
+
 
 ```
 Tip: When viewing a conversation, you can automatically quote text in a comment by highlighting the text, then typing `R`. 
