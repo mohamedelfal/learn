@@ -9,8 +9,9 @@ To create a heading, add one to six `#` symbols before your heading text. The nu
 # The largest heading
 ## The second largest heading
 ###### The smallest heading
-Rendered H1, H2, and H6 headings
 ```
+Rendered H1, H2, and H6 headings
+
 ![Headings](./image/headings-rendered.png)
 
 When you use two or more headings, GitHub automatically generates a table of contents which you can access by clicking  within the file header. Each heading title is listed in the table of contents and you can click a title to navigate to the selected section.
@@ -63,8 +64,11 @@ git status
 git add
 git commit
 ```
-Rendered code block
+
 ````
+
+Rendered code block
+
 ![code-block-rendered](./image/code-block-rendered.png)
 
 For more information, see ["Creating and highlighting code blocks."](https://docs.github.com/en/articles/creating-and-highlighting-code-blocks)
