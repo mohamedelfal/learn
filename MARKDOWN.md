@@ -42,9 +42,9 @@ Text that is not a quote
 ![Quoting text](./image/quoted-text-rendered.png)
 
 
-```
-Tip: When viewing a conversation, you can automatically quote text in a comment by highlighting the text, then typing `R`. You can quote an entire comment by clicking , then Quote reply. For more information about keyboard shortcuts, see ["Keyboard shortcuts."](https://docs.github.com/en/articles/keyboard-shortcuts)
-```
+>**Tip**: When viewing a conversation, you can automatically quote text in a comment by highlighting the text, then typing `R`. <br>
+> You can quote an entire comment by clicking , then Quote reply. <br> For more information about keyboard shortcuts, see ["Keyboard shortcuts."](https://docs.github.com/en/articles/keyboard-shortcuts)
+
 # Quoting code
 You can call out code or a command within a sentence with single backticks. 
 The text within the backticks will not be formatted. 
@@ -77,7 +77,7 @@ If you are frequently editing code snippets and tables, you may benefit from ena
 For more information, see ["Enabling fixed-width fonts in the editor."](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/about-writing-and-formatting-on-github#enabling-fixed-width-fonts-in-the-editor)
 
 # Links
-You can create an inline link by wrapping link text in brackets `[ ]`, and then wrapping the URL in parentheses `( )`. 
+You can create an inline link by wrapping link text in brackets `[ ]`, and then wrapping the URL in parentheses `( )`. <br>
 You can also use the keyboard shortcut `Command`+`K` to create a link. 
 When you have text selected, you can paste a URL from your clipboard to automatically create a link from the selection.
 
