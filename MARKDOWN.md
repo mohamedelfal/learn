@@ -69,20 +69,23 @@ Rendered code block
 
 For more information, see ["Creating and highlighting code blocks."](https://docs.github.com/en/articles/creating-and-highlighting-code-blocks)
 
-If you are frequently editing code snippets and tables, you may benefit from enabling a fixed-width font in all comment fields on GitHub. For more information, see ["Enabling fixed-width fonts in the editor."](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/about-writing-and-formatting-on-github#enabling-fixed-width-fonts-in-the-editor)
+If you are frequently editing code snippets and tables, you may benefit from enabling a fixed-width font in all comment fields on GitHub. 
+For more information, see ["Enabling fixed-width fonts in the editor."](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/about-writing-and-formatting-on-github#enabling-fixed-width-fonts-in-the-editor)
 
 # Links
 You can create an inline link by wrapping link text in brackets `[ ]`, and then wrapping the URL in parentheses `( )`. 
-You can also use the keyboard shortcut `Command`+`K` to create a link. When you have text selected, you can paste a URL from your clipboard to automatically create a link from the selection.
+You can also use the keyboard shortcut `Command`+`K` to create a link. 
+When you have text selected, you can paste a URL from your clipboard to automatically create a link from the selection.
 
 ```
 This site was built using [GitHub Pages](https://pages.github.com/).
 ```
 ![Links](./image/link-rendered.png)
 
-``
-Tip: GitHub automatically creates links when valid URLs are written in a comment. For more information, see ["Autolinked references and URLs](https://docs.github.com/en/articles/autolinked-references-and-urls)."
-``
+```
+Tip: GitHub automatically creates links when valid URLs are written in a comment. 
+For more information, see ["Autolinked references and URLs](https://docs.github.com/en/articles/autolinked-references-and-urls)."
+```
 
 # Section links
 You can link directly to a section in a rendered file by hovering over the section heading to expose the link:
