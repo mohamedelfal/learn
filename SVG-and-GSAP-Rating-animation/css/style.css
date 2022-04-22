@@ -1,0 +1,34 @@
+body {
+	font-family: sans-serif;
+	width: 100%;
+	height: 100vh;
+	display: -webkit-box;
+	display: -ms-flexbox;
+	display: flex;
+	-ms-flex-pack: distribute;
+	justify-content: space-around;
+}
+svg {
+	width: 400px;
+}
+.body {
+	fill: #2EB7CE;
+}
+.card {
+	cursor: pointer;
+}
+text,
+.card path {
+	fill: #95B0B6;
+	-webkit-transition: all 0.2s ease-out;
+	-moz-transition: all 0.2s ease-out;
+	transition: all 0.2s ease-out;
+}
+.card--selected path {
+	fill: #000;
+	opacity: 1;
+}
+.cards-number {
+	fill: #fff;
+	font-size: 40px;
+}
