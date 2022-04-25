@@ -21,7 +21,8 @@ https://mohamedelfal.github.io/learn/Blur-amount-fixed-VS-relative-to-size/
 ## experimental-sectioning [source code](https://github.com/mohamedelfal/learn/tree/main/experimental-sectioning)
 https://mohamedelfal.github.io/learn/experimental-sectioning/
 
-
+## Parallax-Star-background-in-CSS 
+https://mohamedelfal.github.io/learn/Parallax-Star-background-in-CSS/
 
 ## SVG and GSAP Rating animation [source code](https://github.com/mohamedelfal/learn/tree/main/SVG-and-GSAP-Rating-animation)
 https://mohamedelfal.github.io/learn/SVG-and-GSAP-Rating-animation/
