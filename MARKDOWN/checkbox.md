@@ -141,11 +141,17 @@ Done? | Name
   
   ##
   
-  for uncheck box use 
-  :white_large_square 
-  and for check box use 
-  :white_check_mark 
-  
+  for uncheck box use :
+ ```
+  :white_large_square: 
+ ```
+   :white_large_square: 
+ 
+  and for check box use:
+ ```
+  :white_check_mark: 
+```
+  :white_check_mark: 
   ##
 ```  
 | demo                                              | demo |
