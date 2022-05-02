@@ -1,0 +1,146 @@
+<canvas id="canvas" resize></canvas>
+
+<img src="https://i.ibb.co/4PvK0wh/iris-min.png" style="opacity: 0;">
+
+<!-- Define inlined PaperScript associate it with canvas -->
+<script type="text/paperscript" canvas="canvas">
+var blob,
+points = 9,
+peak_points = [],
+firstTime = true,
+t,
+radius_Diff;
+
+//Iris (.png)
+var iris = new Raster({
+  source: 'https://i.ibb.co/4PvK0wh/iris-min.png',
+  position: view.center,
+
+});
+
+//Sclera
+var sclera = new Path.Circle({
+  center: view.center,
+  radius: 60,
+  fillColor: '#fff'
+});
+
+
+function onResize() {
+  if (blob !== undefined) blob.remove();
+  
+  if(view.size.height < 280) radius_Diff = 30;
+  else if(view.size.height < 600  && view.size.height > 280) radius_Diff = 60;
+  else if(view.size.height > 600) radius_Diff = 110
+
+  blob = new Path.Star({
+    center: view.bounds.center,
+    points: points,
+    radius1: view.size.height / 2.5 - radius_Diff,
+    radius2: view.size.height / 2.5,
+    fillColor: {
+      gradient: {
+        stops: [ ['#8b1ccb', 0.35], ['#431071', 0.7]],
+        radial: true
+      },
+      origin: view.center,
+      destination: view.center + (view.size.height / 2.5) - 30
+    },
+    strokeColor: '#fcbbf8',
+    strokeWidth: 1,
+    shadowColor: new Color(0, 0, 0), 
+    shadowOffset: [5, 5],          
+    //shadowBlur: 10,
+    //fullySelected: true,
+  })
+  
+  var height_Blob = blob.bounds.height;
+
+  for (var i = 0; i < blob.segments.length; i++) {
+    if (i % 2 !== 0) peak_points.push(blob.segments[i]);
+  }
+
+  blob.smooth({ type: 'geometric', factor: 0.5 });
+
+  sclera.bringToFront();
+  iris.bringToFront();
+  sclera.bounds.size = height_Blob / 3;
+  iris.bounds.size = height_Blob / 6;
+  sclera.position = view.center
+  iris.position = view.center;
+
+  createSclera_grad();
+  firstTime = true;
+}
+
+
+function createSclera_grad() {
+  sclera.fillColor = {
+    gradient: {
+      stops: [['#F7EDFD', 0.06], ['#8b1ccb', 0.3]], 
+      radial: true
+    },
+    origin: iris.position,
+    destination: blob.bounds.topLeft
+  }
+}
+
+
+function randomPointFx(segment) {
+  var angle = Math.random() * Math.PI * 2;
+  segment.data.randomPoint = new Point(Math.cos(angle) * 50 + segment.data.originPoint.x, Math.sin(angle) * 30 + segment.data.originPoint.y)
+}
+
+
+function onFrame(event) {
+
+  /*   Eye follow mouse   */
+  view.onMouseMove = function (e) {
+    var relationW = view.bounds.width / sclera.bounds.width;
+    var relationH = view.bounds.height / sclera.bounds.height;
+
+    iris.position.x = (e.point.x / relationW / 3) + sclera.position.x - (iris.bounds.width / 2.8);
+    iris.position.y = (e.point.y / relationH / 3) + sclera.position.y - (iris.bounds.height / 2.8);
+
+    createSclera_grad();
+
+    t = event.time;
+  }
+
+  if (t + 1 < event.time && iris.position.x !== view.center.x) {
+    var vectorM = view.center - iris.position;
+    iris.position += vectorM / 20;
+    if (vectorM.length < 0.5) iris.position = view.center;
+    createSclera_grad();
+  }
+
+
+  /*   Blob points Animation   */
+  for (var i = 0; i < peak_points.length; i++) {
+    var segment = peak_points[i];
+
+    if (firstTime) {
+      segment.data = {
+        speed: Math.random() * 80 + 2,
+        randomPoint: null,
+        originPoint: new Point(segment.point),
+      }
+
+      randomPointFx(segment);
+      if (i === peak_points.length - 1) firstTime = false;
+    }
+
+    var vector = segment.data.randomPoint - segment.point;
+    segment.point += vector / segment.data.speed;
+    segment.data.speed += 0.05;
+
+    if (segment.data.speed > 80) {
+      segment.data.speed = Math.random() * 80 + 2;
+    }
+
+    if (vector.length < 25) {
+      randomPointFx(segment);
+    }
+  }
+}
+</script>
