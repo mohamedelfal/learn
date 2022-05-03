@@ -1,1 +1,1 @@
-url https://mohamedelfal.github.io/Blob-Eye-Canvas-Animation/
+url https://mohamedelfal.github.io/learn/Blob-Eye-Canvas-Animation/
