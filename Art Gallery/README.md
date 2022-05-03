@@ -1,2 +1,2 @@
 Art Gallery
-https://mohamedelfal.github.io/Art%20Gallery/
+https://mohamedelfal.github.io/learn/Art%20Gallery/
