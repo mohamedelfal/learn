@@ -1,9 +1,9 @@
 (function() {
     // Add event listener
-    document.addEventListener("mousemove", parallax);
-    const elem = document.querySelector("#parallax");
+    document.addEventListener("mousemove", Prometheus);
+    const elem = document.querySelector("#Prometheus");
     // Magic happens here
-    function parallax(e) {
+    function Prometheus(e) {
         let _w = window.innerWidth/2;
         let _h = window.innerHeight/2;
         let _mouseX = e.clientX;
