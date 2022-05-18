@@ -1,0 +1,121 @@
+<!DOCTYPE >
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>prometheus on aws ec2 part2</title>
+  <!-- Load Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Fira+Sans:900|Merriweather&display=swap" rel="stylesheet">  <!-- Load Styles -->
+  <!-- <link href="../css/style.css" rel="stylesheet"> -->
+</head>
+<body>
+
+<h1 id="-2-prometheus-node-exporter-on-aws-ec2-prometheus-on-aws-ec2-part2-md-"><a href="./prometheus-on-aws-ec2-part2.md">2- Prometheus Node Exporter on AWS EC2</a></h1>
+<p>Author:
+<a href="https://codewizardly.com/authors/hector/">Héctor Rosales</a>  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168934128-dac0416b-8e26-47d0-aeac-0b62996502d3.png" alt="image">
+In the previous topic we installed Prometheus and now is ready to receive metrics.<br>The next step is to launch a second AWS EC2 instance, install Prometheus Node Exporter in it and finally, configure Prometheus to collect its metrics.</p>
+<p>To continue reading follow these links:  </p>
+<p>1- <a href="./prometheus-on-aws-ec2-part1.md">Install Prometheus on AWS EC2</a><br>2- <a href="./prometheus-on-aws-ec2-part2.md">Prometheus Node Exporter on AWS EC2</a><br>3- <a href="./prometheus-on-aws-ec2-part3.md">Prometheus Discovery Service on AWS EC2</a><br>4- <a href="./prometheus-on-aws-ec2-part4.md">Prometheus Alertmanager Sending Emails</a>  </p>
+<h2 id="prometheus-node-exporter">Prometheus Node Exporter</h2>
+<p>There are <a href="https://prometheus.io/docs/instrumenting/exporters">many exporters</a> and integrations available for Prometheus.<br>As mentioned above, in this example we are going to install Prometheus Node Exporter in an AWS EC2 instance.</p>
+<blockquote>
+<p>“Prometheus exporter for hardware and OS metrics exposed by *NIX kernels, written in Go with pluggable metric collectors.”</p>
+</blockquote>
+<p><strong>Setup an EC2 Machine</strong><br>The instructions are similar to <a href="./prometheus-on-aws-ec2-part1.md">the steps we followed to create a Prometheus EC2 instance</a> with some light differences.</p>
+<p>One of these differences is that we don’t need to create a new Key Pair since we already created one for Prometheus, as long we have this key safely stored we can choose it from the drop down.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168934846-e7bd9d2a-407a-4c32-80b2-9db072b8db63.png" alt="Node Exporter Key Pair"></p>
+<p>The second difference is that we also don’t need to create a Security Group since we already created one with all the inbound and outbound rules defined for Prometheus and for the Node Exporter.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168934894-00bb7158-3080-4038-8d79-ebc8407ac137.png" alt="Node Exporter SG"></p>
+<p><strong>Installation</strong>
+Now we should have two AWS EC2 instances created, one Security group and one ssh key for both machines. In your case it will be different but I got the following:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Machine</th>
+<th style="text-align:left">Public DNS</th>
+<th style="text-align:left">Port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">prometheus-server</td>
+<td style="text-align:left">ec2-3-17-28.53.us-east-2.compute.amazonaws.com</td>
+<td style="text-align:left">9090</td>
+</tr>
+<tr>
+<td style="text-align:left">prometheus-node-exporter</td>
+<td style="text-align:left">ec2-13-58-127-241.us-east-2.compute.amazonaws.com</td>
+<td style="text-align:left">9100</td>
+</tr>
+</tbody>
+</table>
+<p>We need to start a session in the new virtual machine.</p>
+<pre><code class="lang-console"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag">-i</span> <span class="hljs-selector-tag">prometheus</span><span class="hljs-selector-class">.pem</span> <span class="hljs-selector-tag">ubuntu</span>@<span class="hljs-keyword">ec2</span>-<span class="hljs-keyword">13</span>-<span class="hljs-keyword">58</span>-<span class="hljs-keyword">127</span>-<span class="hljs-keyword">241</span>.<span class="hljs-keyword">us</span>-<span class="hljs-keyword">east</span>-<span class="hljs-keyword">2</span>.<span class="hljs-keyword">compute</span>.<span class="hljs-keyword">amazonaws</span>.<span class="hljs-keyword">com</span>
+</code></pre>
+<p>Now let’s create a user for Prometheus Node Exporter</p>
+<pre><code class="lang-bash"><span class="hljs-attribute">sudo</span> useradd --<span class="hljs-literal">no</span>-create-home node_exporter
+</code></pre>
+<p>We are ready to install Node Exporter binaries.</p>
+<pre><code class="lang-bash">wget https:<span class="hljs-comment">//github.com/prometheus/node_exporter/releases/download/v1.0.1/node_exporter-1.0.1.linux-amd64.tar.gz</span>
+tar xzf node_exporter-<span class="hljs-number">1.0</span>.<span class="hljs-number">1</span><span class="hljs-selector-class">.linux-amd64</span><span class="hljs-selector-class">.tar</span><span class="hljs-selector-class">.gz</span>
+sudo cp node_exporter-<span class="hljs-number">1.0</span>.<span class="hljs-number">1</span>.linux-amd64/node_exporter /usr/local/bin/node_exporter
+rm -rf node_exporter-<span class="hljs-number">1.0</span>.<span class="hljs-number">1</span><span class="hljs-selector-class">.linux-amd64</span><span class="hljs-selector-class">.tar</span><span class="hljs-selector-class">.gz</span> node_exporter-<span class="hljs-number">1.0</span>.<span class="hljs-number">1</span>.linux-amd64
+</code></pre>
+<p>Configure a service. Create <code>/etc/systemd/system/node-exporter.service</code> if it doesn’t exist.</p>
+<pre><code class="lang-service"><span class="hljs-section">[Unit]</span>
+<span class="hljs-attr">Description</span>=Prometheus Node Exporter Service
+<span class="hljs-attr">After</span>=network.target
+<span class="hljs-section">
+[Service]</span>
+<span class="hljs-attr">User</span>=node_exporter
+<span class="hljs-attr">Group</span>=node_exporter
+<span class="hljs-attr">Type</span>=simple
+<span class="hljs-attr">ExecStart</span>=/usr/local/bin/node_exporter
+<span class="hljs-section">
+[Install]</span>
+<span class="hljs-attr">WantedBy</span>=multi-user.target
+</code></pre>
+<p>Configure systemd.</p>
+<pre><code class="lang-bash">sudo systemctl daemon-reload
+sudo systemctl enable <span class="hljs-keyword">node</span><span class="hljs-title">-exporter</span>
+sudo systemctl <span class="hljs-literal">start</span> <span class="hljs-keyword">node</span><span class="hljs-title">-exporter</span>
+sudo systemctl status <span class="hljs-keyword">node</span><span class="hljs-title">-exporter</span>
+</code></pre>
+<p><strong>Configure Prometheus Server</strong><br>Now we need to go back to the first AWS EC2 instance where we installed Prometheus and change its configuration to start receiving metrics from the Node Exporter we just installed and configured.</p>
+<p>Start a session in the Prometheus host virtual machine.</p>
+<pre><code class="lang-console"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag">-i</span> <span class="hljs-selector-tag">prometheus</span><span class="hljs-selector-class">.pem</span> <span class="hljs-selector-tag">ubuntu</span>@<span class="hljs-keyword">ec2</span>-<span class="hljs-keyword">3</span>-<span class="hljs-keyword">17</span>-<span class="hljs-keyword">28</span>.<span class="hljs-keyword">53</span>.<span class="hljs-keyword">us</span>-<span class="hljs-keyword">east</span>-<span class="hljs-keyword">2</span>.<span class="hljs-keyword">compute</span>.<span class="hljs-keyword">amazonaws</span>.<span class="hljs-keyword">com</span>
+</code></pre>
+<p>Edit <code>/etc/prometheus/prometheus.yml</code> file.</p>
+<pre><code class="lang-yml"><span class="hljs-attribute">global</span>:
+  <span class="hljs-attribute">scrape_interval</span>: <span class="hljs-number">15s</span>
+  <span class="hljs-attribute">external_labels</span>:
+    <span class="hljs-attribute">monitor</span>: <span class="hljs-string">'prometheus'</span>
+
+<span class="hljs-attribute">scrape_configs</span>:
+
+  - <span class="hljs-attribute">job_name</span>: <span class="hljs-string">'node_exporter'</span>
+
+    <span class="hljs-attribute">static_configs</span>:
+
+      - <span class="hljs-attribute">targets</span>: [<span class="hljs-string">'ec2-13-58-127-241.us-east-2.compute.amazonaws.com:9100'</span>]
+</code></pre>
+<p>Remember that <code>ec2-13-58-127-241.us-east-2.compute.amazonaws.com</code> is the DNS value I got from my configuration and yours should be something different.</p>
+<p>Restart Prometheus service.</p>
+<pre><code class="lang-bash"><span class="hljs-attribute">sudo systemctl restart prometheus</span>
+</code></pre>
+<p><strong>Try It Out</strong>
+Now in your browser navigate to <code>http://ec2-3-17-28.53.us-east-2.compute.amazonaws.com:9090/targets</code> .<br>Remember to change the url accordingly to your Prometheus AWS EC2 instance details and you should see something similar to this:</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168935623-35329b54-4dc1-4b59-b917-ca9e6600379a.png" alt="Try it out"></p>
+<h2 id="index-of-topics">Index of Topics</h2>
+<p><a href="./prometheus-on-aws-ec2-part3.md">Next topic --&gt;</a><br><a href="./prometheus-on-aws-ec2-part1.md">&lt;-- Previous topic </a>  </p>
+<p><strong><a href="./prometheus-on-aws-ec2-part1.md">1-Install Prometheus on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part2.md">2-Prometheus Node Exporter on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part3.md">3-Prometheus Discovery Service on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part4.md">4-Prometheus Alertmanager Sending Emails</a></strong>  </p>
+
+  
+  
+  
+     <!-- JavaScript file -->
+   <!-- <script src="../js/script.js"></script> -->
+</body>
+</html>
