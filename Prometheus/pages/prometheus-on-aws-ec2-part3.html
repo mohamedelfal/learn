@@ -1,0 +1,80 @@
+<!DOCTYPE >
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>prometheus on aws ec2 part1</title>
+  <!-- Load Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Fira+Sans:900|Merriweather&display=swap" rel="stylesheet">  <!-- Load Styles -->
+  <!-- <link href="../css/style.css" rel="stylesheet"> -->
+</head>
+<body>
+
+<h1 id="-prometheus-service-discovery-on-aws-ec2-prometheus-on-aws-ec2-part3-md-"><a href="./prometheus-on-aws-ec2-part3.md">Prometheus Service Discovery on AWS EC2</a></h1>
+<p>Author: <a href="https://codewizardly.com/authors/hector/">Héctor Rosales</a>
+<img src="https://user-images.githubusercontent.com/100445644/168937235-8241dfaf-92fe-4d80-9334-175c16c1a034.png" alt="image"></p>
+<p>Follow the complete story:</p>
+<p><a href="./prometheus-on-aws-ec2-part1.md">1- Install Prometheus on AWS EC2</a><br><a href="./prometheus-on-aws-ec2-part2.md">2- Prometheus Node Exporter on AWS EC2</a><br><a href="./prometheus-on-aws-ec2-part3.md">3- Prometheus Discovery Service on AWS EC2</a><br><a href="./prometheus-on-aws-ec2-part4.md">4- Prometheus Alertmanager Sending Emails</a>  </p>
+<p>Cool, now you have Prometheus and Node Exporter up and running.<br>What if you want to add a third EC2 instance? A trivial task, you only need to go back to Prometheus, update its static configuration and restart the service, manually.<br>So, every time some change is needed, you might need to do it yourself or hire Bob if your name is Bob, don’t take it personal.<br>to work on that on the weekends. Also, consider human errors, the stack of another tasks we hide behind the Kanban board, and the fact that we all are a little bit lazy.<br>I think I have made my point, we need to automate this process. Don’t worry, Prometheus got our backs, now meet Prometheus Service Discovery feature.</p>
+<p>Well, in fact, there are many service discovery options out there.<br>Check out the <a href="https://github.com/prometheus/prometheus/tree/master/discovery">list</a>.<br>In our case we are going to use EC2 Service Discovery.</p>
+<p><strong>Create an IAM User</strong><br>This part might be confusing if you are not familiar with AWS IAM just because the new terms behind what is needed. Let’s talk about a few concepts first:</p>
+<p><strong>User</strong>  </p>
+<blockquote>
+<p>“An AWS Identity and Access Management (IAM) user is an entity that you create in AWS to represent the person or application that uses it to interact with AWS. A user in AWS consists of a name and credentials.” Read more</p>
+</blockquote>
+<p><strong>Policy</strong>  </p>
+<blockquote>
+<p>“A policy is an object in AWS that, when associated with an identity or resource, defines their permissions. IAM policies define permissions for an action regardless of the method that you use to perform the operation.” Read more</p>
+</blockquote>
+<p><strong>Instructions</strong><br>First, select <strong>IAM</strong> from the AWS Services using the search bar.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168937861-b7b77b9f-7b8b-4666-9daf-6cfa76894ffd.png" alt="Select IAM">  </p>
+<p>Select <strong>Users</strong> from the sidebar menu.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938142-0b9d842b-7e3d-4237-bb39-094133d55873.png" alt="Select User">  </p>
+<p>Click on <strong>Add user</strong> button.   </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938190-f7ceb797-9088-451f-a6e7-afe3ad6c2059.png" alt="Add User">  </p>
+<p>Set user details Pick a name of your preference for the new user and fill the blank space.<br>Also, give the user just <strong>Programmatic access</strong>, our user will not login to AWS Console which is the user interface we are currently using.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938498-5e7f19e9-bfee-454a-ae98-5dcff0407aaf.png" alt="Set User Details">  </p>
+<p>Set permissions for the new user. At this point, the new user is not capable to do nothing.<br>Attach an existing policy using the filter and looking for <strong><code>AmazonEC2ReadOnlyAccess</code></strong>.</p>
+<blockquote>
+<p>“IAM enables security best practices by allowing you to grant unique security credentials to users and groups to specify which AWS service APIs and resources they can access. IAM is secure by default; users have no access to AWS resources until permissions are explicitly granted.”</p>
+</blockquote>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938650-44d348be-53d5-4a2d-abad-ab982fa0f1e6.png" alt="Set Permissions">  </p>
+<p>Add tags. This step is optional but it is a good idea to add tags for future reference.<br>The number of IAM users often grows without any control and without a reference is really hard to tell which user you actually need.<br>Remember that every user means a potential target for attackers and it could be an open door to your AWS account.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938769-96943212-0fb4-4f2f-8f88-8e7215b13fab.png" alt="UserTags">  </p>
+<p>Review the details of the new user.</p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938826-4256f88b-2208-4f24-9ec2-24eae8f36b98.png" alt="Review User">  </p>
+<p>Save the credentials in a safe place.<br>It is really important to keep these values in a safe place.<br>With these credentials anyone could use your AWS account and generate bills.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168938904-e720ec9b-06ab-4bf4-8efe-2cbbad40789f.png" alt="Save Credentials">  </p>
+<h2 id="configure-prometheus-service-discovery">Configure Prometheus Service Discovery</h2>
+<p>Now we need to go back to Prometheus and change the configuration again.<br>Remember that <code>ec2-3-17-28.53.us-east-2.compute.amazonaws.com</code> is the DNS value I got from my configuration and yours should be something different.</p>
+<p>Start a session in the Prometheus host virtual machine.</p>
+<pre><code class="lang-console"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag">-i</span> <span class="hljs-selector-tag">prometheus</span><span class="hljs-selector-class">.pem</span> <span class="hljs-selector-tag">ubuntu</span>@<span class="hljs-keyword">ec2</span>-<span class="hljs-keyword">3</span>-<span class="hljs-keyword">17</span>-<span class="hljs-keyword">28</span>.<span class="hljs-keyword">53</span>.<span class="hljs-keyword">us</span>-<span class="hljs-keyword">east</span>-<span class="hljs-keyword">2</span>.<span class="hljs-keyword">compute</span>.<span class="hljs-keyword">amazonaws</span>.<span class="hljs-keyword">com</span>
+</code></pre>
+<p>Edit <code>/etc/prometheus/prometheus.yml</code> file.<br>Notice the <code>region</code> property, this could be different in your setup.</p>
+<pre><code class="lang-yml"><span class="hljs-attribute">global</span>:
+  <span class="hljs-attribute">scrape_interval</span>: <span class="hljs-number">1s</span>
+  <span class="hljs-attribute">evaluation_interval</span>: <span class="hljs-number">1s</span>
+
+<span class="hljs-attribute">scrape_configs</span>:
+  - <span class="hljs-attribute">job_name</span>: <span class="hljs-string">'node'</span>
+    <span class="hljs-attribute">ec2_sd_configs</span>:
+      - <span class="hljs-attribute">region</span>: us-east-<span class="hljs-number">1</span>
+        <span class="hljs-attribute">access_key</span>: PUT_THE_ACCESS_KEY_HERE
+        <span class="hljs-attribute">secret_key</span>: PUT_THE_SECRET_KEY_HERE
+        <span class="hljs-attribute">port</span>: <span class="hljs-number">9100</span>
+</code></pre>
+<p>Restart Prometheus service.</p>
+<pre><code class="lang-bash"><span class="hljs-attribute">sudo systemctl restart prometheus</span>
+</code></pre>
+<p><strong>Try It Out</strong><br>Let’s see if Prometheus is finding our Node-Exporter instance.<br>Go to <strong><em><code>http://ec2-3-17-28.53.us-east-2.compute.amazonaws.com:9090/targets</code></em></strong>.<br>You might see other instances registered since Prometheus is looking up for all the EC2 instances in the same network.Service Discovery</p>
+<h2 id="index-of-topics">Index of Topics</h2>
+<p><a href="./prometheus-on-aws-ec2-part4.md">Next topic --&gt;</a><br><a href="./prometheus-on-aws-ec2-part2.md">&lt;-- Previous topic </a>  </p>
+<p><strong><a href="./prometheus-on-aws-ec2-part1.md">1-Install Prometheus on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part2.md">2-Prometheus Node Exporter on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part3.md">3-Prometheus Discovery Service on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part4.md">4-Prometheus Alertmanager Sending Emails</a></strong>  </p>
+
+
+
+     <!-- JavaScript file -->
+   <!-- <script src="../js/script.js"></script> -->
+</body>
+</html>
