@@ -1,0 +1,141 @@
+<!DOCTYPE >
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Prometheus</title>
+  <!-- Load Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Fira+Sans:900|Merriweather&display=swap" rel="stylesheet">  <!-- Load Styles -->
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+  
+  <h1 id="prometheus-on-aws-ec2">Prometheus on AWS EC2</h1>
+<p><em>Author: <a href="https://codewizardly.com/authors/hector/">Héctor Rosales</a></em><br><em><a href="https://codewizardly.com/prometheus-on-aws-ec2-part1/">Source url</a></em>  </p>
+<h1 id="-1-install-prometheus-on-aws-ec2-prometheus-on-aws-ec2-part1-md-"><a href="./prometheus-on-aws-ec2-part1.md">1- Install Prometheus on AWS EC2</a></h1>
+<p><img src="https://user-images.githubusercontent.com/100445644/168924721-28d192fb-0059-48b8-a0b5-73d4f3ab7b79.png" alt="image"><br>Let’s face it, there will be something wrong at some point, and you need to know when it is happening.<br>That awesome application you have been working on for 6 months and you treat as your child is going to be in trouble someday.<br>Therefore, how to be there exactly when something needs to be fixed? 
+How do you tell that something is crashing? Obviously, 
+it is not possible for us to be there all the time, so we need something else do that for us.<br>Prometheus is an awesome open-source tool for monitoring, designed for reliability, 
+and meant to be the system you look for during an outage to allow you to quickly diagnose problems.</p>
+<p>The content is divided in the following topics:<br><strong><a href="./prometheus-on-aws-ec2-part1.md">1-Install Prometheus on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part2.md">2-Prometheus Node Exporter on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part3.md">3-Prometheus Discovery Service on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part4.md">4-Prometheus Alertmanager Sending Emails</a></strong>  </p>
+<p><strong>About AWS Free Tier</strong><br>AWS offers a Free Tier after creating an account and there are two main types of tiers I want to list:</p>
+<ul>
+<li>12 Months Free: Starts after you create an account.</li>
+<li>Always Free: Services and resources always free with some limits (e. g. AWS Lambda 1 Million free requests per month).<br>This means that after creating an account you will have exactly 1 year of free usage of a list of services.<br>To configure and test Prometheus in AWS you could create an account, if you don’t have one already, and consume the Amazon EC2 750 Hours free per month.<br>It is worth to mention that there are still some limits in the Free Tier plan and talking specifically of AWS EC2,<br>if you want to stay within the Free Tier, you must use only EC2 Micro instances.<br>We will review a few concepts along this post to clarify what I mean.</li>
+</ul>
+<p>We will need two AWS EC2 instances: one as a Prometheus and the other one will have Prometheus Node Exporter installed.<br>To keep it simple, all the process is manual.</p>
+<p><strong>Create an AWS EC2 Instance</strong><br>Follow the next instructions to launch a new AWS EC2 instance for a Prometheus.<br>If you can’t read from the image, click on it to have a better view.  </p>
+<p><strong>1- Go to AWS EC2 Dashboard in your <a href="https://console.aws.amazon.com/">AWS Console</a> and start the launch instance wizard</strong>.    </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168926434-1c837931-0ce5-4e01-a86e-09f6c6c713dd.png" alt="launch instance"></p>
+<p><strong>2- Select <code>Ubuntu Server 20.04 AMI</code> or any <code>Ubuntu distribution</code> of your like</strong>.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168926622-9608ca5d-ae6c-4cb4-a0ff-d16e9d49b45b.png" alt="Select Ami"></p>
+<p><strong>3- Choose <code>t2.micro</code> as the desired instance type</strong>.<br>Be careful selecting the instance type because not choosing wisely can lead to serious consequences (like paying).
+Notice that the next step is to <code>click Next: Configure Instance Details</code> button and not the <code>Review and Launch button</code>.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168927114-4ccd66c8-ee25-465c-9dda-a193043f9d20.png" alt="Select Instance Type"></p>
+<p><strong>4- Configure the instance details</strong>.<br>Notice that I selected the default VPC and the default subnet.<br>You might see other ids but as long you select the default configuration the result is going to be the same.<br>If you want to set a more complex, isolated and secured network it is up to you.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168927198-7207c5d5-17b0-4906-915f-592c8f4fb401.png" alt="Configure Instance Details"></p>
+<p><strong>5- Add storage, 8 GB is more than what we need for this example</strong>.   </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168927282-e503aaa0-b440-4275-b9d3-0d76ab49b902.png" alt="Add Storage"></p>
+<p><strong>6- Add a <code>Name</code> tag, this is the name of the EC2 instance.<code>prometheus-server</code></strong>.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168927380-28b6c507-e327-4cc0-89ee-1dbcbf4e5756.png" alt="Add Tags"></p>
+<p><strong>7- Configure a Security Group</strong>.<br>Think of it like firewall rules.<br>We will need port <code>9090</code> for Prometheus, port <code>9100</code> for Prometheus Node Exporter and finally, port <code>9093</code> for the Alertmanager.<br>For this example, we are going to use a single Security Group for all the AWS EC2 instances to keep it simple.<br><img src="https://user-images.githubusercontent.com/100445644/168927523-be910707-7c34-4869-a8b8-62f32669649b.png" alt="Configure Security Group"></p>
+<p><strong>8- Review instance launch</strong>.  </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168927916-00a26e03-1f87-442c-8203-379d9b3f455b.png" alt="Review Instance Launch">  </p>
+<p><strong>9- Create a new Key Pair if necessary.</strong><br>This is an important step because without this key you wouldn’t be able to connect to the AWS EC2 instance.<br><img src="https://user-images.githubusercontent.com/100445644/168928076-1b8c9ce0-94b9-4220-9224-721e91a1540f.png" alt="Select a Key Pair"></p>
+<p><strong>10- Launch it</strong>.   </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168928574-27ae20d6-d0b2-4b8f-9cff-6a91df226277.png" alt="Launch it"></p>
+<p><strong>11- Get the Public DNS of the AWS EC2 instance</strong>.   </p>
+<p><img src="https://user-images.githubusercontent.com/100445644/168928186-f3935d69-7018-4e20-938a-1297f4142928.png" alt="Get Public Ip">   </p>
+<p><strong>Install Prometheus</strong>
+Now that we have the infrastructure ready we can continue the process.<br>Change the information accordingly to your results.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Machine</th>
+<th style="text-align:left">Public DNS</th>
+<th style="text-align:left">Port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">prometheus-server</td>
+<td style="text-align:left">ec2-3-17-28.53.us-east-2.compute.amazonaws.com</td>
+<td style="text-align:left">9090</td>
+</tr>
+</tbody>
+</table>
+<p>Let’s connect to the AWS EC2 instance where we are going to install Prometheus. 
+<code>prometheus.pem</code> is the key that was generated previously.  </p>
+<pre><code class="lang-console"><span class="hljs-selector-tag">ssh</span> <span class="hljs-selector-tag">-i</span> <span class="hljs-selector-tag">prometheus</span><span class="hljs-selector-class">.pem</span> <span class="hljs-selector-tag">ubuntu</span>@<span class="hljs-keyword">ec2</span>-<span class="hljs-keyword">3</span>-<span class="hljs-keyword">17</span>-<span class="hljs-keyword">28</span>.<span class="hljs-keyword">53</span>.<span class="hljs-keyword">us</span>-<span class="hljs-keyword">east</span>-<span class="hljs-keyword">2</span>.<span class="hljs-keyword">compute</span>.<span class="hljs-keyword">amazonaws</span>.<span class="hljs-keyword">com</span>
+</code></pre>
+<p>It is recommended to create a different user than root to run specific services. 
+This will help to isolate Prometheus and add protection to the system.<br>I really like this <a href="https://apple.stackexchange.com/questions/192365/is-it-ok-to-use-the-root-user-as-a-normal-user/192422#192422">stackexchange answer</a>, it could give you a better explanation of why we should avoid the usage of the root user for everything.<br>Also we need to create a directory to host Prometheus configuration and another one to host its data.  </p>
+<pre><code class="lang-bash">sudo useradd --no-create-home prometheus
+sudo mkdir /etc/prometheus
+sudo mkdir /var/<span class="hljs-class"><span class="hljs-keyword">lib</span>/<span class="hljs-title">prometheus</span></span>
+</code></pre>
+<p>Now we need to install Prometheus.</p>
+<pre><code class="lang-bash">wget https://github.com/prometheus/prometheus/releases/download/v2<span class="hljs-meta">.19</span><span class="hljs-meta">.0</span>/prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64.tar.gz
+tar xvfz prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64.tar.gz
+
+sudo cp prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64/prometheus /usr/local/bin
+sudo cp prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64/promtool /usr/local/bin/
+sudo cp -r prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64/consoles /etc/prometheus
+sudo cp -r prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64/console_libraries /etc/prometheus
+
+sudo cp prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64/promtool /usr/local/bin/
+rm -rf prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64.tar.gz prometheus-<span class="hljs-number">2.19</span><span class="hljs-meta">.0</span>.linux-amd64
+</code></pre>
+<p>Initially and as a proof of concept we can configure Prometheus to monitor itself.<br>All what we need to do is create or replace the content of <code>/etc/prometheus/prometheus.yml</code>.  </p>
+<pre><code class="lang-yml"><span class="hljs-attribute">global</span>:
+  <span class="hljs-attribute">scrape_interval</span>: <span class="hljs-number">15s</span>
+  <span class="hljs-attribute">external_labels</span>:
+    <span class="hljs-attribute">monitor</span>: <span class="hljs-string">'prometheus'</span>
+
+<span class="hljs-attribute">scrape_configs</span>:
+  - <span class="hljs-attribute">job_name</span>: <span class="hljs-string">'prometheus'</span>
+    <span class="hljs-attribute">static_configs</span>:
+      - <span class="hljs-attribute">targets</span>: [<span class="hljs-string">'localhost:9090'</span>]
+</code></pre>
+<p>We might want Prometheus to be available as a service.<br>Every time we reboot the system Prometheus will start with the OS.<br>Create <code>/etc/systemd/system/prometheus.service</code> and add to it the following content:  </p>
+<pre><code class="lang-service">[Unit]
+Description=Prometheus
+Wants=network-online<span class="hljs-selector-class">.target</span>
+After=network-online<span class="hljs-selector-class">.target</span>
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/usr/local/bin/prometheus \
+    --config<span class="hljs-selector-class">.file</span> /etc/prometheus/prometheus<span class="hljs-selector-class">.yml</span> \
+    --storage<span class="hljs-selector-class">.tsdb</span><span class="hljs-selector-class">.path</span> /var/lib/prometheus/ \
+    --web<span class="hljs-selector-class">.console</span><span class="hljs-selector-class">.templates</span>=/etc/prometheus/consoles \
+    --web<span class="hljs-selector-class">.console</span><span class="hljs-selector-class">.libraries</span>=/etc/prometheus/console_libraries
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+<p>Let’s change the permissions of the directories, files and binaries we just added to our system.  </p>
+<pre><code class="lang-bash">sudo chown <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/etc/</span>prometheus
+sudo chown <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/usr/</span>local<span class="hljs-regexp">/bin/</span>prometheus
+sudo chown <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/usr/</span>local<span class="hljs-regexp">/bin/</span>promtool
+sudo chown -R <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/etc/</span>prometheus/consoles
+sudo chown -R <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/etc/</span>prometheus/console_libraries
+sudo chown -R <span class="hljs-string">prometheus:</span>prometheus <span class="hljs-regexp">/var/</span>lib/prometheus
+</code></pre>
+<p>Now we need to configure systemd.  </p>
+<pre><code class="lang-bash">sudo<span class="hljs-keyword"> system</span>ctl daemon-reload
+sudo<span class="hljs-keyword"> system</span>ctl enable prometheus
+</code></pre>
+<p>Good job, now we have everything in place but the setup is not complete, we need metrics to feed our brand new Prometheus instance.<br>In the next section we will learn how to setup a node exporter in a second AWS EC2 instance.</p>
+<h2 id="index-of-topics">Index of Topics</h2>
+<p><a href="./prometheus-on-aws-ec2-part2.md">Next topic --&gt;</a></p>
+<p><strong><a href="./prometheus-on-aws-ec2-part1.md">1-Install Prometheus on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part2.md">2-Prometheus Node Exporter on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part3.md">3-Prometheus Discovery Service on AWS EC2</a></strong><br><strong><a href="./prometheus-on-aws-ec2-part4.md">4-Prometheus Alertmanager Sending Emails</a></strong>  </p>
+
+  
+     <!-- JavaScript file -->
+   <script src="../js/script.js"></script>
+</body>
+</html>
