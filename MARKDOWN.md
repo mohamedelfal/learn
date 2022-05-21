@@ -97,4 +97,18 @@ You can link directly to a section in a rendered file by hovering over the secti
 ![Section link within the README file for the github/scientist repository](./image/readme-links.png)
 
 # 
-![PernX.png](./image/PernX.png)
+![PernX.png](./image/PernX.png)  
+```
+:white_check_mark:
+```
+:white_check_mark: 
+
+```
+:ballot_box_with_check:
+```
+:ballot_box_with_check:
+
+```
+:heavy_check_mark:
+```
+:heavy_check_mark: 
